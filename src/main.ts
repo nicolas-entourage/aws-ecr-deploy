@@ -15,6 +15,9 @@ async function run() {
   // Login to AWS ECR
   await awsEcrLogin(inputs);
 
+  // Create ECR Repo
+  await awsCreateEcrRepo(inputs);
+
   // Build the Dockerfile image
   await buildImage(inputs, accountUrl);
 
@@ -58,14 +61,18 @@ async function awsEcrLogin(inputs: Inputs) {
   core.info('== FINISHED LOGIN ==');
 }
 
+function getEcrRepoName(inputs: Inputs): string {
+  if (inputs.EcrRepoName.length > 0) {
+    return inputs.EcrRepoName;
+  }
+
+  // default
+  return (process.env.GITHUB_REPOSITORY || '').toLocaleLowerCase()
+}
+
 function getEcrTags(accountUrl: string, repoName: string, inputTags: string): string[] {
   let tags = inputTags.split(',');
   const ecrTags: string[] = [];
-
-  // Default to Github Repository name
-  if (repoName.length === 0) {
-    repoName = (process.env.GITHUB_REPOSITORY || '').toLocaleLowerCase();
-  }
 
   // Add the ref tag if code is a checked out release tag
   if ((process.env.GITHUB_REF || '').startsWith('refs/tags')) {
@@ -84,9 +91,43 @@ function getEcrTags(accountUrl: string, repoName: string, inputTags: string): st
   return ecrTags
 }
 
+async function awsCreateEcrRepo(inputs: Inputs) {
+  core.info('== CHECKING FOR ECR REPO ==');
+
+  const repoName = getEcrRepoName(inputs);
+
+  let output = '';
+  let err = '';
+
+  let opts: ExecOptions = {
+    cwd: './',
+    silent: true,
+    listeners: {
+      stdout: (data: Buffer) => {
+        output += data.toString();
+      },
+      stderr: (data: Buffer) => {
+        err += data.toString();
+      }
+    },
+  }
+
+  await exec(`aws ecr describe-repositories --repository-names "${repoName}"`, undefined, opts);
+
+  if (err.length > 0) {
+    // Repo doesn't exist or failed. Try creating...
+    await exec(`aws ecr create-repository --repository-name ${repoName}`);
+    core.info(`== CREATED ECR REPO [ ${repoName} ] ==`);
+    return
+  }
+
+  core.info('== REPO FOUND ==')
+}
+
 async function buildImage(inputs: Inputs, accountUrl: string) {
   core.info('== BUILD IMAGE FROM DOCKERFILE ==');
-  const ecrTags = getEcrTags(accountUrl, inputs.EcrRepoName, inputs.EcrTags);
+  const repoName = getEcrRepoName(inputs);
+  const ecrTags = getEcrTags(accountUrl, repoName, inputs.EcrTags);
 
   let tags = ecrTags.join(' -t ');
 
@@ -103,10 +144,10 @@ async function buildImage(inputs: Inputs, accountUrl: string) {
 
 async function deployToEcr(inputs: Inputs, accountUrl: string) {
   core.info('== DEPLOYING TO ECR ==');
-
   core.debug(`:: ECR Account URL: ${accountUrl}`);
 
-  const ecrTags = getEcrTags(accountUrl, inputs.EcrRepoName, inputs.EcrTags);
+  const repoName = getEcrRepoName(inputs);
+  const ecrTags = getEcrTags(accountUrl, repoName, inputs.EcrTags);
 
   for (const tag of ecrTags) {
     await exec(`docker push ${tag}`);
