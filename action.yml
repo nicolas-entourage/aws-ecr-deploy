@@ -1,0 +1,37 @@
+name: 'AWS: Deploy to ECR'
+author: Terranovax <stephen@terranovax.solutions>
+description: Deploys a Docker image to AWS ECR
+branding:
+  icon: upload-cloud
+  color: orange
+inputs:
+  # REQUIRED
+  account_id:
+    description: The AWS account id
+    required: true
+  access_key_id:
+    description: The AWS access key id
+    required: true
+  secret_access_key:
+    description: The AWS secret access key
+    required: true
+  region:
+    description: The AWS region of the ECR repo
+    required: true
+  # OPTIONAL
+  dockerfile:
+    description: Path to Dockerfile to build an image for deploying to ECR
+    default: './Dockerfile'
+  docker_build_args:
+    description: Additional build arguments to pass into Docker build
+  path:
+    description: Path to Dockerfile, defaults to working directory
+    default: .
+  repo:
+    description: 'Name of your ECR repository. Defaults to the Github repo name in the lowercase format: {owner}/{repo_name}'
+  tags:
+    description: Comma-separated string of ECR image tags to apply
+    default: latest
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
