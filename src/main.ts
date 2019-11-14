@@ -159,6 +159,6 @@ async function deployToEcr(inputs: Inputs, accountUrl: string) {
 try {
   run();
 } catch (error) {
-  console.log(error);
+  core.error(error);
   core.setFailed(error.message);
 }
