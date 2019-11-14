@@ -99,11 +99,16 @@ async function awsCreateEcrRepo(inputs: Inputs) {
   try {
     await exec(`aws ecr describe-repositories --repository-names "${repoName}"`);
   } catch {
-    core.info('== CREATING ECR REPO ==');
-    // Repo doesn't exist or failed. Try creating...
-    await exec(`aws ecr create-repository --repository-name ${repoName}`);
-    core.info(`== FINISHED CREATING ECR REPO [ ${repoName} ] ==`);
-    return
+    // Repo doesn't exist or failed. Try creating if specified.
+    if (inputs.ShouldCreateRepo === 'true') {
+      core.info('== CREATING ECR REPO ==');
+      await exec(`aws ecr create-repository --repository-name ${repoName}`);
+      core.info(`== FINISHED CREATING ECR REPO [ ${repoName} ] ==`);
+      return
+    } else {
+      core.setFailed('== ECR Repository is missing ==');
+      throw new Error(`ECR repo named [ ${repoName} ] was not found. Perhaps the spelling was incorrect?`);
+    }
   }
 
   core.info('== REPO FOUND ==')

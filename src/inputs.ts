@@ -25,7 +25,7 @@ export default class Inputs {
 
   @Input('create_repo')
   @Optional
-  public readonly ShouldCreateRepo: string = '';
+  public readonly ShouldCreateRepo: string = 'false';
 
   @Input('dockerfile')
   @Optional
