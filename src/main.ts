@@ -96,28 +96,13 @@ async function awsCreateEcrRepo(inputs: Inputs) {
 
   const repoName = getEcrRepoName(inputs);
 
-  let output = '';
-  let err = '';
-
-  let opts: ExecOptions = {
-    cwd: './',
-    silent: true,
-    listeners: {
-      stdout: (data: Buffer) => {
-        output += data.toString();
-      },
-      stderr: (data: Buffer) => {
-        err += data.toString();
-      }
-    },
-  }
-
-  await exec(`aws ecr describe-repositories --repository-names "${repoName}"`, undefined, opts);
-
-  if (err.length > 0) {
+  try {
+    await exec(`aws ecr describe-repositories --repository-names "${repoName}"`);
+  } catch {
+    core.info('== CREATING ECR REPO ==');
     // Repo doesn't exist or failed. Try creating...
     await exec(`aws ecr create-repository --repository-name ${repoName}`);
-    core.info(`== CREATED ECR REPO [ ${repoName} ] ==`);
+    core.info(`== FINISHED CREATING ECR REPO [ ${repoName} ] ==`);
     return
   }
 
