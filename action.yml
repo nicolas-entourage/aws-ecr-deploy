@@ -19,6 +19,9 @@ inputs:
     description: The AWS region of the ECR repo
     required: true
   # OPTIONAL
+  create_repo:
+    description: Create the AWS ECR repo if it doesn't exist
+    default: false
   dockerfile:
     description: Path to Dockerfile to build an image for deploying to ECR
     default: './Dockerfile'

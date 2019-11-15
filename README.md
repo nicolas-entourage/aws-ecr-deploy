@@ -11,13 +11,14 @@ This action helps build a Dockerfile image and publish it into an AWS ECR reposi
 
 ## Optional Parameters
 
-| Parameter           | Type     | Default               | Description                                                                                  |
-|---------------------|----------|-----------------------|----------------------------------------------------------------------------------------------|
-| `dockerfile`        | `string` | `Dockerfile`          | Name of Dockerfile to use                                                                    |
-| `docker_build_args` | `string` |                       | Extra flags to pass to docker build (see docs.docker.com/engine/reference/commandline/build) |
-| `path`              | `string` | `.`                   | Path to Dockerfile, defaults to the working directory                                        |
-| `repo`              | `string` | `{owner}/{repo_name}` | Name of your ECR repository. Defaults to the Github Repo name.                               |
-| `tags`              | `string` | `latest`              | Comma-separated string of ECR image tags (ex latest,1.0.0,)                                  |
+| Parameter           | Type      | Default               | Description                                                                                  |
+|---------------------|-----------|-----------------------|----------------------------------------------------------------------------------------------|
+| `create_repo`       | `boolean` | `false`               | If true, an ECR repo is made if not found                                                    |
+| `dockerfile`        | `string`  | `Dockerfile`          | Name of Dockerfile to use                                                                    |
+| `docker_build_args` | `string`  |                       | Extra flags to pass to docker build (see docs.docker.com/engine/reference/commandline/build) |
+| `path`              | `string`  | `.`                   | Path to Dockerfile, defaults to the working directory                                        |
+| `repo`              | `string`  | `{owner}/{repo_name}` | Name of your ECR repository. Defaults to the Github Repo name.                               |
+| `tags`              | `string`  | `latest`              | Comma-separated string of ECR image tags (ex latest,1.0.0,)                                  |
 
 ## Usage
 ```yaml
