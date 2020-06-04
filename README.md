@@ -26,6 +26,7 @@ jobs:
   ecr-deploy:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
     - uses: Terranovax/aws-ecr-deploy@v1
       with:
         access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
