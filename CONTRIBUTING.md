@@ -10,6 +10,8 @@ This project is built using **Typescript** with decorators enabled. That being s
 npm install
 ```
 
+You can test locally using the `./example` project and using the [`act`](https://github.com/nektos/act) CLI tool.
+
 ## Publishing
 
 Before publishing this as a Github Action, you have to make sure to check in the compiled code (i.e. `./dist`) into the repo. At the time of writing this, Github does not run any preflight requests for compiling actions.
