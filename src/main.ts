@@ -1,7 +1,6 @@
 import * as core from '@actions/core';
 import { exec } from '@actions/exec';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
-import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import Inputs from './inputs';
 
