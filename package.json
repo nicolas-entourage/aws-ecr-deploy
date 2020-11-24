@@ -28,15 +28,17 @@
   },
   "homepage": "https://github.com/Terranovax/aws-ecr-deploy#readme",
   "dependencies": {
-    "@actions/core": "1.2.0",
-    "@actions/exec": "1.0.1",
-    "@actions/io": "1.0.1",
-    "reflect-metadata": "0.1.13"
+    "@actions/core": "1.2.6",
+    "@actions/exec": "1.0.4",
+    "@actions/io": "1.0.2",
+    "@types/uuid": "8.3.0",
+    "reflect-metadata": "0.1.13",
+    "uuid": "8.3.1"
   },
   "devDependencies": {
     "@types/node": "^12.12.7",
     "@zeit/ncc": "^0.20.5",
-    "concurrently": "^5.0.0",
+    "concurrently": "^5.3.0",
     "typescript": "^3.7.2"
   }
 }

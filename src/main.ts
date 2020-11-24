@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
 import { exec } from '@actions/exec';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
+import * as fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import Inputs from './inputs';
 
 async function run() {
@@ -8,9 +10,6 @@ async function run() {
   const inputs = new Inputs();
 
   const accountUrl = `${inputs.AwsAccountID}.dkr.ecr.${inputs.Region}.amazonaws.com`;
-
-  // Configure AWS CLI
-  awsConfigure(inputs);
 
   // Login to AWS ECR
   await awsEcrLogin(inputs);
@@ -25,11 +24,31 @@ async function run() {
   await deployToEcr(inputs, accountUrl);
 }
 
-function awsConfigure(inputs: Inputs) {
-  core.debug(':: Setting AWS credentials')
-  core.exportVariable('AWS_ACCESS_KEY_ID', inputs.AccessKeyID);
-  core.exportVariable('AWS_SECRET_ACCESS_KEY', inputs.SecretAccessKey);
-  core.exportVariable('AWS_DEFAULT_REGION', inputs.Region);
+async function runAws(inputs: Inputs, command: string) {
+  let cmd = '';
+  let err = '';
+  let stopToken = uuidv4();
+
+  let opts: ExecOptions = {
+    cwd: './',
+    silent: true,
+    listeners: {
+      stdout: (data: Buffer) => {
+        cmd += data.toString();
+      },
+      stderr: (data: Buffer) => {
+        err += data.toString();
+      }
+    },
+  }
+
+  core.info(`::stop-commands::${stopToken}`);
+  await exec(`AWS_ACCESS_KEY_ID=${inputs.AccessKeyID} AWS_SECRET_ACCESS_KEY=${inputs.SecretAccessKey} AWS_REGION=${inputs.Region} ${command}`, undefined, opts);
+  core.info(`::${stopToken}::`);
+
+  if (err.length > 0) {
+    throw err;
+  }
 }
 
 async function awsEcrLogin(inputs: Inputs) {
@@ -37,6 +56,7 @@ async function awsEcrLogin(inputs: Inputs) {
 
   let loginCmd = '';
   let err = '';
+  let stopToken = uuidv4();
 
   let opts: ExecOptions = {
     cwd: './',
@@ -51,12 +71,19 @@ async function awsEcrLogin(inputs: Inputs) {
     },
   }
 
-  await exec(`aws ecr get-login --no-include-email --region ${inputs.Region}`, undefined, opts);
-  if (err.length > 0) {
+  core.info('== LOGGING INTO AWS ECR ==');
+
+  try {
+    await runAws(inputs, `aws ecr get-login --no-include-email --region ${inputs.Region}`);
+  } catch(e) {
+    core.error(e);
     throw new Error('Failed to retrieve docker login to AWS ECR. Perhaps the AWS credentials do not have the correct permission');
   }
 
+
+  core.info(`::stop-commands::${stopToken}`);
   await exec(loginCmd, undefined, opts);
+  core.info(`::${stopToken}::`);
 
   core.info('== FINISHED LOGIN ==');
 }
@@ -97,12 +124,12 @@ async function awsCreateEcrRepo(inputs: Inputs) {
   const repoName = getEcrRepoName(inputs);
 
   try {
-    await exec(`aws ecr describe-repositories --repository-names "${repoName}"`);
+    await runAws(inputs, `aws ecr describe-repositories --repository-names "${repoName}"`);
   } catch {
     // Repo doesn't exist or failed. Try creating if specified.
     if (inputs.ShouldCreateRepo === 'true') {
       core.info('== CREATING ECR REPO ==');
-      await exec(`aws ecr create-repository --repository-name ${repoName}`);
+      await runAws(inputs, `aws ecr create-repository --repository-name ${repoName}`);
       core.info(`== FINISHED CREATING ECR REPO [ ${repoName} ] ==`);
       return
     } else {
