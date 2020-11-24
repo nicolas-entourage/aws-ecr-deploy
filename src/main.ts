@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
 import { exec } from '@actions/exec';
 import { ExecOptions } from '@actions/exec/lib/interfaces';
+import * as fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import Inputs from './inputs';
 
 async function run() {
@@ -10,7 +12,7 @@ async function run() {
   const accountUrl = `${inputs.AwsAccountID}.dkr.ecr.${inputs.Region}.amazonaws.com`;
 
   // Configure AWS CLI
-  awsConfigure(inputs);
+  await awsConfigure(inputs);
 
   // Login to AWS ECR
   await awsEcrLogin(inputs);
@@ -25,11 +27,16 @@ async function run() {
   await deployToEcr(inputs, accountUrl);
 }
 
-function awsConfigure(inputs: Inputs) {
-  core.debug(':: Setting AWS credentials')
-  core.exportVariable('AWS_ACCESS_KEY_ID', inputs.AccessKeyID);
-  core.exportVariable('AWS_SECRET_ACCESS_KEY', inputs.SecretAccessKey);
-  core.exportVariable('AWS_DEFAULT_REGION', inputs.Region);
+async function awsConfigure(inputs: Inputs) {
+  core.debug(':: Setting AWS credentials');
+
+  await fs.mkdirSync('~/.aws');
+  await fs.writeFileSync('~/.aws/config', `
+[default]
+aws_access_key_id=${inputs.AccessKeyID}
+aws_secret_access_key=${inputs.SecretAccessKey}
+region=${inputs.Region}
+`);
 }
 
 async function awsEcrLogin(inputs: Inputs) {
@@ -37,6 +44,7 @@ async function awsEcrLogin(inputs: Inputs) {
 
   let loginCmd = '';
   let err = '';
+  let stopToken = uuidv4();
 
   let opts: ExecOptions = {
     cwd: './',
@@ -51,6 +59,9 @@ async function awsEcrLogin(inputs: Inputs) {
     },
   }
 
+  core.info('== LOGGING INTO AWS ECR ==');
+  core.info(`::stop-commands::${stopToken}`);
+
   await exec(`aws ecr get-login --no-include-email --region ${inputs.Region}`, undefined, opts);
   if (err.length > 0) {
     throw new Error('Failed to retrieve docker login to AWS ECR. Perhaps the AWS credentials do not have the correct permission');
@@ -58,6 +69,7 @@ async function awsEcrLogin(inputs: Inputs) {
 
   await exec(loginCmd, undefined, opts);
 
+  core.info(`::${stopToken}::`);
   core.info('== FINISHED LOGIN ==');
 }
 
