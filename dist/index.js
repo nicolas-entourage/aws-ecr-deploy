@@ -2032,7 +2032,7 @@ function exportVariable(name, val) {
         file_command_1.issueCommand('ENV', commandValue);
     }
     else {
-        command_1.issueCommand('set-env', { name }, convertedVal);
+        // command_1.issueCommand('set-env', { name }, convertedVal);
     }
 }
 exports.exportVariable = exportVariable;
@@ -2054,7 +2054,7 @@ function addPath(inputPath) {
         file_command_1.issueCommand('PATH', inputPath);
     }
     else {
-        command_1.issueCommand('add-path', {}, inputPath);
+        // command_1.issueCommand('add-path', {}, inputPath);
     }
     process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
 }
